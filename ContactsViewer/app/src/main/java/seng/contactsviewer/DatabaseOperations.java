@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,25 +16,51 @@ import seng.contactsviewer.TableData.TableInfo;
 /**
  * Created by us296865 on 2/20/2015.
  */
-public class DatabaseOperations extends SQLiteOpenHelper {
+public class DatabaseOperations {
+    public static final String DATABASE_NAME="mydb";
     public static final int DATABASE_VERSION = 1;
-    public String CREATE_QUERY = "CREATE TABLE " + TableInfo.TABLE_NAME + " ("
+    public static String CREATE_QUERY = "CREATE TABLE " + TableInfo.TABLE_NAME + " ("
             + TableInfo.NAME + " TEXT,"
             + TableInfo.TITLE + " TEXT,"
             + TableInfo.PHONE + " TEXT,"
             + TableInfo.EMAIL + " TEXT,"
             + TableInfo.TWITTER_ID + " TEXT );";
-
-
-    public DatabaseOperations(Context context) {
-        super(context, TableInfo.DATABASE_NAME, null, DATABASE_VERSION);
-        Log.d("Database operations", "Database created");
-
-        // edc - This is my attempt to seed for initial use.
-        // It looks like it will run each time and use the last data as well
-        // not quite want I wanted to do
-        // seedDB();
+    SQLiteDatabase db;
+    final Context context;
+    DatabaseHelper dbhlper;
+    public DatabaseOperations(Context context){
+        this.context=context;
+        dbhlper=new DatabaseHelper(context);
     }
+    private static class DatabaseHelper extends SQLiteOpenHelper{
+
+        DatabaseHelper(Context context){
+         super(context,DATABASE_NAME,null,DATABASE_VERSION);
+        }
+
+        @Override
+        public void onCreate(SQLiteDatabase db) {
+
+            db.execSQL(CREATE_QUERY);
+
+            Log.d("Database operations", "Table created");
+        }
+
+        @Override
+        public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+
+        }
+
+    }
+//    public DatabaseOperations(Context context) {
+//        super(context, TableInfo.DATABASE_NAME, null, DATABASE_VERSION);
+//        Log.d("Database operations", "Database created");
+//
+//        // edc - This is my attempt to seed for initial use.
+//        // It looks like it will run each time and use the last data as well
+//        // not quite want I wanted to do
+//        // seedDB();
+//    }
 
     /// edc - This is intended to populate the database on initial use
     /// perhaps there should be logic in the list activity that handles the initial load
@@ -48,25 +75,22 @@ public class DatabaseOperations extends SQLiteOpenHelper {
         contacts.add(new Contact("Simon Tam", "Doctor", "612-555-6789", "zwashburne@gmail.com", "@mrswash"));
 
         for (Contact contact : contacts) {
-            insertContact(this, contact);
+            insertContact(contact);
         }
         Log.d("Database operations", "Database seeded");
     }
-
-    @Override
-    public void onCreate(SQLiteDatabase db) {
-
-        db.execSQL(CREATE_QUERY);
-        Log.d("Database operations", "Table created");
+    public DatabaseOperations open() throws SQLException{
+            db=dbhlper.getWritableDatabase();
+           seedDB();
+           return this;
+    }
+    public void close(){
+        dbhlper.close();
     }
 
-    @Override
-    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 
-    }
-
-    public void insertContact(DatabaseOperations dop, Contact contact) {
-        SQLiteDatabase sq = dop.getWritableDatabase();
+    public void insertContact( Contact contact) {
+        //SQLiteDatabase sq = dop.getWritableDatabase();
         ContentValues cv = new ContentValues();
 
         cv.put(TableInfo.NAME, contact.getName());
@@ -75,13 +99,13 @@ public class DatabaseOperations extends SQLiteOpenHelper {
         cv.put(TableInfo.EMAIL, contact.getEmail());
         cv.put(TableInfo.TWITTER_ID, contact.getTwitterId());
 
-        long k = sq.insert(TableInfo.TABLE_NAME, null, cv);
+        long k = db.insert(TableInfo.TABLE_NAME, null, cv);
         Log.d("Database operations", "One row inserted");
 
     }
 
-    public Cursor getContacts(DatabaseOperations databaseOperations) {
-        SQLiteDatabase sq = databaseOperations.getReadableDatabase();
+    public Cursor getContacts() {
+        //SQLiteDatabase sq = databaseOperations.getReadableDatabase();
         String[] columns =
                 {
                         TableInfo.NAME,
@@ -90,7 +114,7 @@ public class DatabaseOperations extends SQLiteOpenHelper {
                         TableInfo.EMAIL,
                         TableInfo.TWITTER_ID
                 };
-        Cursor cr = sq.query(TableInfo.TABLE_NAME, columns, null, null, null, null, columns[0]);
+        Cursor cr = db.query(TableInfo.TABLE_NAME, columns, null, null, null, null, columns[0]);
         return cr;
     }
 }

@@ -11,6 +11,7 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import java.io.Serializable;
+import java.sql.SQLException;
 
 
 public class EditContactActivity extends ActionBarActivity {
@@ -60,7 +61,12 @@ public class EditContactActivity extends ActionBarActivity {
                     newContact.setTwitterId(TWITTER_ID.getText().toString());
 
                     DatabaseOperations db = new DatabaseOperations(ctx);
-                    db.insertContact(db, newContact);
+                    try{db.open();
+                    }catch(SQLException e){
+                        e.printStackTrace();
+                    }
+                    db.insertContact(newContact);
+                    db.close();
                     Toast.makeText(getBaseContext(), "Contact Added", Toast.LENGTH_LONG).show();
                     finish();
                 }

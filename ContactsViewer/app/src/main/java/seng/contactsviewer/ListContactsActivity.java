@@ -14,6 +14,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,15 +44,19 @@ public class ListContactsActivity extends ListActivity {
 //        contacts.add(new Contact("Rog", "Golfer", "555-1212", "k@g.com", "@k"));
 //        contacts.add(new Contact("Alabama Jones", "Engineer", "555-1212", "k@g.com", "@k"));
 
-        DatabaseOperations dop = new DatabaseOperations(ctx);
-        Cursor cr = dop.getContacts(dop);
+        DatabaseOperations dop = new DatabaseOperations(this);
+        try{dop.open();
+        }catch(SQLException e){
+            e.printStackTrace();
+        }
+        Cursor cr = dop.getContacts();
 
         cr.moveToFirst();
         do {
             contacts.add(new Contact(cr.getString(0), cr.getString(1), cr.getString(2), cr.getString(3), cr.getString(4)));
 
         } while (cr.moveToNext());
-
+        dop.close();
 
         setListAdapter(new ContactAdapter(this, R.layout.contact_item, contacts));
     }
